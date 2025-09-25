@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 2em auto; line-height: 1.6; }
+        input[type="text"] { padding: 8px; width: 200px; }
+        button { padding: 8px 12px; cursor: pointer; }
+        #userList { list-style-type: none; padding: 0; }
+        #userList li { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #ddd; }
+        #userList li:last-child { border-bottom: none; }
+        #userList li button { background-color: #f44336; color: white; border: none; }
+    </style>
+</head>
+<body>
+    <h1>User Management</h1>
+    
+    <h2>Add New User</h2>
+    <form id="addUserForm">
+        <input type="text" id="newUserName" placeholder="Enter new user name" required>
+        <button type="submit">Add User</button>
+    </form>
+    
+    <h2>User List</h2>
+    <ul id="userList"></ul>
+
+    <script>
+        // REPLACE THIS WITH THE URL OF YOUR DEPLOYED BACKEND
+        const API_BASE_URL = 'https://your-railway-app.up.railway.app'; // Example URL
+
+        async function fetchUsers() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/users`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch users');
+                }
+                const users = await response.json();
+                const userList = document.getElementById('userList');
+                userList.innerHTML = '';
+    
+                users.forEach(user => {
+                    const li = document.createElement('li');
+                    li.textContent = user.name;
+                    
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.onclick = () => deleteUser(user.id);
+                    
+                    li.appendChild(deleteBtn);
+                    userList.appendChild(li);
+                });
+            } catch (error) {
+                console.error("Error fetching users:", error);
+                alert("Could not load users. Is the backend service running?");
+            }
+        }
+    
+        async function addUser(event) {
+            event.preventDefault();
+            const userNameInput = document.getElementById('newUserName');
+            const newUserName = userNameInput.value;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: newUserName })
+                });
+    
+                if (response.ok) {
+                    userNameInput.value = '';
+                    fetchUsers();
+                } else {
+                    const errorData = await response.json();
+                    alert(`Failed to add user: ${errorData.error}`);
+                }
+            } catch (error) {
+                console.error("Error adding user:", error);
+                alert("Failed to add user. Check backend connection.");
+            }
+        }
+    
+        async function deleteUser(userId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
+                    method: 'DELETE'
+                });
+    
+                if (response.ok) {
+                    fetchUsers();
+                } else {
+                    const errorData = await response.json();
+                    alert(`Failed to delete user: ${errorData.error}`);
+                }
+            } catch (error) {
+                console.error("Error deleting user:", error);
+                alert("Failed to delete user. Check backend connection.");
+            }
+        }
+    
+        document.addEventListener('DOMContentLoaded', fetchUsers);
+        document.getElementById('addUserForm').addEventListener('submit', addUser);
+    </script>
+</body>
+</html>
